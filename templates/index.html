@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Audio Recorder</title>
+    <!-- Bootstrap CSS -->
+    <link
+        rel="stylesheet"
+        href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+    >
+    <style>
+        body { padding-top: 20px; }
+        .name-label { font-weight: bold; }
+        .table-responsive { margin-bottom: 30px; }
+        .play-button, .favorite-button, .edit-button, .apply-button {
+            margin-right: 5px;
+        }
+        .name-input { width: 100%; }
+        @media (max-width: 576px) {
+            .btn { font-size: 14px; padding: 5px 10px; }
+            .name-input { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1 class="text-center">Audio Recorder</h1>
+    <div id="status" class="text-center mb-4">
+        <!-- Status will be updated here -->
+    </div>
+
+    <h2>Favorites</h2>
+    <div class="form-group">
+        <label for="favorites-filter">Filter Favorites:</label>
+        <input type="text" class="form-control" id="favorites-filter" placeholder="Type to filter...">
+    </div>
+    <div id="favorites" class="table-responsive">
+        <!-- List of favorites will be updated here -->
+    </div>
+
+    <h2>Recordings</h2>
+    <div id="recordings" class="table-responsive">
+        <!-- List of recordings will be updated here -->
+    </div>
+</div>
+
+<!-- jQuery and Bootstrap JS -->
+<script
+    src="https://code.jquery.com/jquery-3.5.1.min.js"
+    integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0="
+    crossorigin="anonymous"
+></script>
+<script
+    src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"
+></script>
+
+<script>
+    var editingNames = {};  // Keep track of which items are being edited
+    var favoritesData = [];
+    var favoritesFilterText = '';
+
+    function updateStatus() {
+        $.getJSON('/status', function(data) {
+            var statusText = 'Listening: ' + data.is_listening + ', Recording: ' + data.is_recording;
+            $('#status').text(statusText);
+
+            // Update the favorites data and list
+            favoritesData = data.favorites;
+            updateFavoritesList();
+
+            // Update the recordings list
+            var recordings = data.recordings;
+            var recordingsDiv = $('#recordings');
+
+            if (recordings.length === 0) {
+                recordingsDiv.html('<p>No recordings yet.</p>');
+                return;
+            }
+
+            var table = $('<table class="table table-striped table-bordered"></table>');
+            var header = $('<thead><tr><th>Name</th><th>Timestamp</th><th>Transcription</th><th>Actions</th><th>Favorite</th></tr></thead>');
+            table.append(header);
+            var body = $('<tbody></tbody>');
+
+            recordings.forEach(function(rec) {
+                var recId = 'rec_' + rec.timestamp;
+                var editingInfo = editingNames[recId];
+                var isEditing = editingInfo && editingInfo.editing;
+                var row = $('<tr></tr>');
+                var timestamp = new Date(rec.timestamp * 1000).toLocaleString();
+                var text = rec.text || '[No transcription]';
+                var name = rec.name || '';
+                var audioUrl = '/recordings/' + 'output_' + rec.timestamp + '.mp3';
+
+                var playButton = $('<button class="btn btn-primary btn-sm play-button">Play</button>');
+                playButton.click(function() {
+                    $.post('/play/' + rec.timestamp, function(response) {
+                        console.log(response);
+                    });
+                    var audioElement = new Audio(audioUrl);
+                    audioElement.play();
+                });
+
+                var favoriteButton = $('<button class="btn btn-warning btn-sm favorite-button">Favorite</button>');
+                favoriteButton.click(function() {
+                    $.post('/favorite/' + rec.timestamp, function(response) {
+                        console.log(response);
+                        updateStatus();
+                    });
+                });
+
+                var nameCell = $('<td></td>');
+                if (isEditing) {
+                    var nameValue = editingInfo.value !== undefined ? editingInfo.value : name;
+                    var nameInput = $('<input type="text" class="form-control name-input"/>').val(nameValue);
+
+                    nameInput.on('input', function() {
+                        editingNames[recId].value = nameInput.val();
+                    });
+
+                    // Preserve focus and cursor position
+                    setTimeout(function() {
+                        nameInput.focus();
+                        if (editingInfo.selectionStart !== undefined) {
+                            nameInput[0].setSelectionRange(editingInfo.selectionStart, editingInfo.selectionEnd);
+                        }
+                    }, 0);
+
+                    nameInput.on('blur', function() {
+                        editingNames[recId].selectionStart = nameInput[0].selectionStart;
+                        editingNames[recId].selectionEnd = nameInput[0].selectionEnd;
+                    });
+
+                    var applyButton = $('<button class="btn btn-success btn-sm apply-button">Apply</button>');
+                    applyButton.click(function() {
+                        var newName = nameInput.val();
+                        $.post('/update_name/recordings/' + rec.timestamp, {name: newName}, function(response) {
+                            console.log(response);
+                            editingNames[recId] = null;
+                            updateStatus();
+                        }).fail(function(jqXHR, textStatus, errorThrown) {
+                            console.error('Error updating name:', textStatus, errorThrown);
+                            alert('Failed to update name. Please try again.');
+                        });
+                    });
+
+                    nameCell.append(nameInput).append('<br>').append(applyButton);
+                } else {
+                    var nameLabel = $('<span class="name-label">' + (name || '[No Name]') + '</span>');
+                    var editButton = $('<button class="btn btn-secondary btn-sm edit-button">Edit</button>');
+                    editButton.click(function() {
+                        editingNames[recId] = { editing: true, value: name };
+                        updateStatus();
+                    });
+                    nameCell.append(nameLabel).append('<br>').append(editButton);
+                }
+
+                row.append(nameCell);
+                row.append('<td>' + timestamp + '</td>');
+                row.append('<td>' + text + '</td>');
+                var actionsCell = $('<td></td>');
+                actionsCell.append(playButton);
+                var favoriteCell = $('<td></td>');
+                favoriteCell.append(favoriteButton);
+                row.append(actionsCell);
+                row.append(favoriteCell);
+                body.append(row);
+            });
+            table.append(body);
+            recordingsDiv.html(table);
+        }).fail(function(jqXHR, textStatus, errorThrown) {
+            console.error('Error fetching status:', textStatus, errorThrown);
+        });
+    }
+
+    function updateFavoritesList() {
+        var favoritesDiv = $('#favorites');
+
+        var filteredFavorites = favoritesData.filter(function(rec) {
+            var name = (rec.name || '').toLowerCase();
+            var text = (rec.text || '').toLowerCase();
+            return name.includes(favoritesFilterText) || text.includes(favoritesFilterText);
+        });
+
+        if (filteredFavorites.length === 0) {
+            favoritesDiv.html('<p>No favorites found.</p>');
+        } else {
+            var favoritesTable = $('<table class="table table-striped table-bordered"></table>');
+            var favoritesHeader = $('<thead><tr><th>Name</th><th>Timestamp</th><th>Transcription</th><th>Actions</th></tr></thead>');
+            favoritesTable.append(favoritesHeader);
+            var favoritesBody = $('<tbody></tbody>');
+
+            filteredFavorites.forEach(function(rec) {
+                var recId = 'fav_' + rec.timestamp;
+                var editingInfo = editingNames[recId];
+                var isEditing = editingInfo && editingInfo.editing;
+                var row = $('<tr></tr>');
+
+                var timestamp = new Date(rec.timestamp * 1000).toLocaleString();
+                var text = rec.text || '[No transcription]';
+                var name = rec.name || '';
+                var audioUrl = '/favorites/' + 'output_' + rec.timestamp + '.mp3';
+
+                var playButton = $('<button class="btn btn-primary btn-sm play-button">Play</button>');
+                playButton.click(function() {
+                    $.post('/play_favorite/' + rec.timestamp, function(response) {
+                        console.log(response);
+                    });
+                    var audioElement = new Audio(audioUrl);
+                    audioElement.play();
+                });
+
+                var nameCell = $('<td></td>');
+                if (isEditing) {
+                    var nameValue = editingInfo.value !== undefined ? editingInfo.value : name;
+                    var nameInput = $('<input type="text" class="form-control name-input"/>').val(nameValue);
+
+                    nameInput.on('input', function() {
+                        editingNames[recId].value = nameInput.val();
+                    });
+
+                    // Preserve focus and cursor position
+                    setTimeout(function() {
+                        nameInput.focus();
+                        if (editingInfo.selectionStart !== undefined) {
+                            nameInput[0].setSelectionRange(editingInfo.selectionStart, editingInfo.selectionEnd);
+                        }
+                    }, 0);
+
+                    nameInput.on('blur', function() {
+                        editingNames[recId].selectionStart = nameInput[0].selectionStart;
+                        editingNames[recId].selectionEnd = nameInput[0].selectionEnd;
+                    });
+
+                    var applyButton = $('<button class="btn btn-success btn-sm apply-button">Apply</button>');
+                    applyButton.click(function() {
+                        var newName = nameInput.val();
+                        $.post('/update_name/favorites/' + rec.timestamp, {name: newName}, function(response) {
+                            console.log(response);
+                            editingNames[recId] = null;
+                            updateFavoritesList();
+                        }).fail(function(jqXHR, textStatus, errorThrown) {
+                            console.error('Error updating name:', textStatus, errorThrown);
+                            alert('Failed to update name. Please try again.');
+                        });
+                    });
+
+                    nameCell.append(nameInput).append('<br>').append(applyButton);
+                } else {
+                    var nameLabel = $('<span class="name-label">' + (name || '[No Name]') + '</span>');
+                    var editButton = $('<button class="btn btn-secondary btn-sm edit-button">Edit</button>');
+                    editButton.click(function() {
+                        editingNames[recId] = { editing: true, value: name };
+                        updateFavoritesList();
+                    });
+                    nameCell.append(nameLabel).append('<br>').append(editButton);
+                }
+
+                row.append(nameCell);
+                row.append('<td>' + timestamp + '</td>');
+                row.append('<td>' + text + '</td>');
+                var actionsCell = $('<td></td>');
+                actionsCell.append(playButton);
+                row.append(actionsCell);
+                favoritesBody.append(row);
+            });
+            favoritesTable.append(favoritesBody);
+            favoritesDiv.html(favoritesTable);
+        }
+    }
+
+    // Call updateStatus once on page load
+    updateStatus();
+
+    // Set up periodic updates without interfering with editing
+    setInterval(function() {
+        // Only update if not editing any name
+        if (Object.values(editingNames).every(info => !info || !info.editing)) {
+            updateStatus();
+        }
+    }, 1000);
+
+    // Set up the favorites filter input event
+    $(document).ready(function() {
+        $('#favorites-filter').on('input', function() {
+            favoritesFilterText = $(this).val().toLowerCase();
+            updateFavoritesList();
+        });
+    });
+</script>
+
+</body>
+</html>
