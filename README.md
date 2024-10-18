@@ -7,16 +7,15 @@ Works with Call of Duty, MW3, Black Ops, Fortnite, Counterstrike 2, CSGO, Rust, 
 assuming windows - if you're linux you're used to struggling to install stuff lol good luck mate
 
 **Prerequisites ():**
-1. Python 3 (install the latest python - just google python 3 download and install it)
-2. Virtual Microphone application - I use [VB-Audio Virtual Cable](https://vb-audio.com/Cable/)
-3. disable almost all audio in game except for microphone. so music, noises, etc. disable all of that because it will ruin the fun. once all disabled it will sound hella quiet. 
+1. [Python 3](https://www.python.org/downloads/)
+2. Virtual Microphone application: [VB-Audio Virtual Cable](https://vb-audio.com/Cable/)
 
 **How to install:**
 1. a) download this whole repo as a zip file, extract to desktop
 1. b.1) click **start key**, type 'cmd' and **press enter**.
 1. b.2) **type** 'git clone https://github.com/corporate9601/Echo-Voice-Cloning-Soundboard/'
 3. (windows) **double click the 'INSTALL.bat'** file to install python requirements
-4. **done** I guess... if I forgot something, please shout at me on github ;D Thank you!
+4. disable almost all audio in game except for microphone. so music, noises, etc. disable all of that because it will ruin the fun. once all disabled it will sound hella quiet. 
 
 **How to use it(easy):**
 1. Open **windows sound settings** (Settings -> Sound)
