@@ -1,0 +1,6 @@
+soundcard
+numpy
+webrtcvad
+speechrecognition
+pydub
+flask
