@@ -1,7 +1,7 @@
 # Echo-Voice-Cloning-Soundboard WebGUI
 Echo - Voice Cloning Soundboard WebGUI
 
-Works with Call of Duty, MW3, Black Ops, Fortnite, Counterstrike 2, CSGO, Rust, and really any gyatt damn game with voice chat. 
+Works with Call of Duty, MW3, Black Ops, Fortnite, Counterstrike 2, CSGO, Rust, and really any game with voice chat. 
 
 **NB:**
 assuming windows - if you're linux you're used to struggling to install stuff lol good luck mate
