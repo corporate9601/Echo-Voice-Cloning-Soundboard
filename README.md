@@ -12,9 +12,8 @@ assuming windows - should work on linux but idk mate I'm yet to go back to linux
 3. FFmpeg (it gets installed automatically by this script - WINDOWS ONLY)
 
 **How to install:**
-1. a) download this whole repo as a zip file, extract to desktop
-1. b.1) click **start key**, type 'cmd' and **press enter**.
-1. b.2) **type** 'git clone https://github.com/corporate9601/Echo-Voice-Cloning-Soundboard/'
+1. click **start key**, type 'cmd' and **press enter**.
+2. **type** 'git clone https://github.com/corporate9601/Echo-Voice-Cloning-Soundboard/'
 3. (windows) **double click the 'INSTALL.bat'** file to install python requirements
 4. disable almost all audio in game except for microphone. so music, noises, etc. disable all of that because it will ruin the fun. once all disabled it will sound hella quiet. 
 
