@@ -9,6 +9,7 @@ assuming windows - if you're linux you're used to struggling to install stuff lo
 **Prerequisites ():**
 1. [Python 3](https://www.python.org/downloads/)
 2. Virtual Microphone application: [VB-Audio Virtual Cable](https://vb-audio.com/Cable/)
+3. FFmpeg (it gets installed automatically by this script - WINDOWS ONLY)
 
 **How to install:**
 1. a) download this whole repo as a zip file, extract to desktop
